@@ -5,6 +5,9 @@ from django.contrib.auth.models import User
 from django.utils.translation import ugettext_lazy as _
 
 class FacebookProfile(models.Model):
+    class Meta:
+        abstract = True
+        
     user = models.ForeignKey(User, unique=True, verbose_name = _('user'))
     facebook_id = models.BigIntegerField(_('facebook uid'), blank=True, null=True)
     access_token = models.CharField(_('facebook access token'), blank=True, null=True, max_length=150)

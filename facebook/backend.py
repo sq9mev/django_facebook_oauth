@@ -4,7 +4,8 @@ from django.conf import settings
 from django.contrib.auth.models import User, AnonymousUser
 from django.db import IntegrityError
 
-from django.contrib.auth.models import User as FacebookProfile
+profile_module = __import__('.'.join(settings.AUTH_PROFILE_MODULE.split('.')[:-1]))
+FacebookProfile = getattr(profile_module.models,settings.AUTH_PROFILE_MODULE.split('.')[-1])
 
 class FacebookBackend:
     def authenticate(self, token=None, request=None):
