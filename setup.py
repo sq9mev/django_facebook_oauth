@@ -2,7 +2,7 @@ from setuptools import setup
 
 setup(
     name='django-facebook-oauth',
-    version='2.0',
+    version='2.0custome',
     description="Facebook OAuth2 authentication for Django.",
     long_description=open('README.markdown').read(),
     author='Jeff Dickey',
