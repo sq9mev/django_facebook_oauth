@@ -20,6 +20,12 @@ def authentication_callback(request):
     """ Second step of the login process.
     It reads in a code from Facebook, then redirects back to the home page. """
     code = request.GET.get('code')
+    error = request.GET.get('error')
+    if code == None or error != None:
+        url = getattr(settings, "LOGIN_REDIRECT_URL", "/")
+        resp = HttpResponseRedirect(url)
+        return resp 
+        
     user = authenticate(token=code, request=request)
 
     if user.is_anonymous():
