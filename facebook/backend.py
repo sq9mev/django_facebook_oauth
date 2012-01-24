@@ -8,6 +8,23 @@ profile_module = __import__('.'.join(settings.AUTH_PROFILE_MODULE.split('.')[:-1
 FacebookProfile = getattr(profile_module.models,settings.AUTH_PROFILE_MODULE.split('.')[-1])
 
 class FacebookBackend:
+    def update_facebook_info(self, fb_user, fb_profile, access_token):
+        def updateAccessToken():
+            fb_user.access_token = access_token
+        def updateGender():
+            if fb_profile['gender'] == 'male':
+                fb_user.gender = 'm'
+            elif fb_profile['gender'] == 'female':
+                fb_user.gender = 'f'
+        def updateNameAndSurname():
+            fb_user.name = fb_profile['first_name']
+            fb_user.surname = fb_profile['last_name']
+            
+        updateAccessToken()
+        updateGender()
+        updateNameAndSurname()
+        fb_user.save()
+        
     def authenticate(self, token=None, request=None):
         """ Reads in a Facebook code and asks Facebook if it's valid and what user it points to. """
         args = {
@@ -25,15 +42,13 @@ class FacebookBackend:
         # Read the user's profile information
         fb_profile = urllib.urlopen('https://graph.facebook.com/me?access_token=%s' % access_token)
         fb_profile = json.load(fb_profile)
-
+        
         try:
             # Try and find existing user
             fb_user = FacebookProfile.objects.get(facebook_id=fb_profile['id'])
             user = fb_user.user
 
-            # Update access_token
-            fb_user.access_token = access_token
-            fb_user.save()
+            self.update_facebook_info(fb_user, fb_profile, access_token)
 
         except FacebookProfile.DoesNotExist:
             # No existing user
@@ -48,9 +63,9 @@ class FacebookBackend:
                 user.first_name = fb_profile['first_name']
                 user.last_name = fb_profile['last_name']
                 fb_user = FacebookProfile(
-                        facebook_id=fb_profile['id'],
-                        access_token=access_token
+                        facebook_id=fb_profile['id']
                 )
+                self.update_facebook_info(fb_user, fb_profile, access_token)
                 user.facebookprofile = fb_user
 
             else:
@@ -66,8 +81,9 @@ class FacebookBackend:
                 user.save()
 
                 # Create the FacebookProfile
-                fb_user = FacebookProfile(user=user, facebook_id=fb_profile['id'], access_token=access_token)
-                fb_user.save()
+                fb_user = FacebookProfile(user=user, facebook_id=fb_profile['id'])
+                
+                self.update_facebook_info(fb_user, fb_profile, access_token)
 
         return user
 
