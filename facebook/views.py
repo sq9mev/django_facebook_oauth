@@ -1,40 +1,72 @@
+from django.shortcuts import redirect
+from django.conf import settings
+from django.contrib.auth import authenticate, login
+from django.core.urlresolvers import reverse
+from django.shortcuts import render_to_response
+from django.template import RequestContext
+from django.utils.translation import ugettext_lazy as _
+from forms import CreateUserForm
+import facebook
 import urllib
 
-from django.http import HttpResponseRedirect
-from django.conf import settings
-from django.contrib.auth import login as auth_login
-from django.contrib.auth import authenticate
-from django.core.urlresolvers import reverse
 
-def login(request):
+def redirect_to_facebook_auth(request):
     """ First step of process, redirects user to facebook, which redirects to authentication_callback. """
 
     args = {
         'client_id': settings.FACEBOOK_APP_ID,
         'scope': settings.FACEBOOK_SCOPE,
-        'redirect_uri': request.build_absolute_uri('/facebook/authentication_callback'),
+        'redirect_uri': request.build_absolute_uri(reverse(facebook_login)),
     }
-    return HttpResponseRedirect('https://www.facebook.com/dialog/oauth?' + urllib.urlencode(args))
+    return redirect('https://www.facebook.com/dialog/oauth?' + urllib.urlencode(args))
 
-def authentication_callback(request):
-    """ Second step of the login process.
-    It reads in a code from Facebook, then redirects back to the home page. """
-    code = request.GET.get('code')
-    user = authenticate(token=code, request=request)
 
-    if user.is_anonymous():
-        #we have to set this user up
-        url = reverse('facebook_setup')
-        url += "?code=%s" % code
 
-        resp = HttpResponseRedirect(url)
+def facebook_login(request, template_name='facebook/login.html',
+        fail_template_name='facebook/failed.html',
+        extra_context=None, form_class=CreateUserForm,
+        success_url=settings.LOGIN_REDIRECT_URL):
+    """
+    Facebook callback view
+    """
 
+    fb = facebook.create_facebook_proxy(request,
+            request.build_absolute_uri(reverse(facebook_login)))
+
+    if fb.authorized() is None:
+        ctx = extra_context or {}
+        ctx.update({
+            'message': _('We couldn\'t validate your Facebook credentials.'),
+            })
+        return render_to_response(fail_template_name, RequestContext(request, ctx))
+
+
+    if request.method == 'POST':
+        form = form_class(data=request.POST)
+        if form.is_valid():
+            form.save()
+            user = authenticate(facebook_uid=fb.uid)
+            if user:
+                login(request, user)
+            return redirect(success_url)
     else:
-        auth_login(request, user)
 
-        #figure out where to go after setup
-        url = getattr(settings, "LOGIN_REDIRECT_URL", "/")
+        # try to authenticate previously connected facebook user
+        # using facebook User ID
+        
+        user = authenticate(facebook_uid=fb.uid)
 
-        resp = HttpResponseRedirect(url)
-    
-    return resp
+        if user:
+            # user authenticated
+            login(request, user)
+            return redirect(success_url)
+
+        fbprofile = fb.get_profile()
+        form = form_class(initial=fbprofile)
+
+    ctx = {
+            'form': form,
+            }
+    return render_to_response(template_name, RequestContext(request, ctx))
+
+
