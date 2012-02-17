@@ -7,6 +7,7 @@ from django.template import RequestContext
 from django.utils.translation import ugettext_lazy as _
 from forms import CreateUserForm
 import facebook
+from fbgraph import GraphAPIError
 import urllib
 
 
@@ -21,7 +22,26 @@ def redirect_to_facebook_auth(request):
     return redirect('https://www.facebook.com/dialog/oauth?' + urllib.urlencode(args))
 
 
+def catch_connection_error(func, template_name='facebook/failed.html'):
+    """
+    wrapper for Facebook connection error 
+    """
+    def wrapped(request, *args, **kw):
+        message = _('Unknown error')
+        try:
+            return func(request, *args, **kw)
+        except IOError:
+            message = _('Could not connect to Facebook')
+        except GraphAPIError, e:
+            message = unicode(e)
+        ctx = {
+            'message': message,
+            }
+        return render_to_response(template_name, RequestContext(request, ctx))
+    return wrapped
 
+
+@catch_connection_error
 def facebook_login(request, template_name='facebook/login.html',
         fail_template_name='facebook/failed.html',
         extra_context=None, form_class=CreateUserForm,
@@ -33,7 +53,7 @@ def facebook_login(request, template_name='facebook/login.html',
     fb = facebook.create_facebook_proxy(request,
             request.build_absolute_uri(reverse(facebook_login)))
 
-    if fb.authorized() is None:
+    if not fb.authorized():
         ctx = extra_context or {}
         ctx.update({
             'message': _('We couldn\'t validate your Facebook credentials.'),
@@ -42,7 +62,8 @@ def facebook_login(request, template_name='facebook/login.html',
 
 
     if request.method == 'POST':
-        form = form_class(data=request.POST)
+        fbprofile = fb.get_profile()
+        form = form_class(data=request.POST, initial=fbprofile)
         if form.is_valid():
             form.save()
             user = authenticate(facebook_uid=fb.uid)
