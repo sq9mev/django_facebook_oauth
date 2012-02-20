@@ -8,7 +8,7 @@ setup(
     author='Jeff Dickey',
     author_email='me@jeffdickey.info',
     url='https://github.com/dickeytk/django_facebook_oauth',
-    packages=['facebook'],
+    packages=['facebook', 'facebook.migrations',],
     package_dir={'facebook': 'facebook'},
     classifiers=[
         'Development Status :: 3 - Alpha',
