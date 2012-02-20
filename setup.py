@@ -2,7 +2,7 @@ from setuptools import setup
 
 setup(
     name='django-facebook-oauth',
-    version='3.0-dev',
+    version='3.0a1',
     description="Facebook OAuth2 authentication for Django.",
     long_description=open('README.markdown').read(),
     author='Jeff Dickey',
@@ -11,7 +11,7 @@ setup(
     packages=['facebook'],
     package_dir={'facebook': 'facebook'},
     classifiers=[
-        'Development Status :: 5 - Production/Stable',
+        'Development Status :: 3 - Alpha',
         'Environment :: Web Environment',
         'Intended Audience :: Developers',
         'License :: OSI Approved :: MIT License',
