@@ -9,6 +9,7 @@ from forms import CreateUserForm
 import facebook
 from fbgraph import GraphAPIError
 import urllib
+import signals
 
 
 def redirect_to_facebook_auth(request):
@@ -68,6 +69,8 @@ def facebook_login(request, template_name='facebook/login.html',
             form.save()
             user = authenticate(facebook_uid=fb.uid)
             if user:
+                signals.facebook_connect.send(sender=facebook_login,
+                        instance=user, fbprofile=fbprofile, graph=fb.graph)
                 login(request, user)
             return redirect(success_url)
     else:
@@ -79,6 +82,8 @@ def facebook_login(request, template_name='facebook/login.html',
 
         if user:
             # user authenticated
+            signals.facebook_login.send(sender=facebook_login,
+                    instance=user, graph=fb.graph)
             login(request, user)
             return redirect(success_url)
 
