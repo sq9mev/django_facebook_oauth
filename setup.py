@@ -18,5 +18,6 @@ setup(
         'Operating System :: OS Independent',
         'Programming Language :: Python',
         'Framework :: Django',
-    ]
+    ],
+    zip_safe=False,
 )
