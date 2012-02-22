@@ -28,7 +28,7 @@ class Facebook(object):
         return self._profile
 
     def get_user_id(self):
-        return self.graph.get_object('me', fields='id')['id']
+        return self.graph.get_object('me', fields='id').get('id')
             
     def fetch_access_token(self, *args, **kw):
         self.graph.fetch_access_token(*args, **kw)
