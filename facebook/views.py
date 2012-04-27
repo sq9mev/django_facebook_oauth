@@ -18,7 +18,7 @@ def redirect_to_facebook_auth(request):
     args = {
         'client_id': settings.FACEBOOK_APP_ID,
         'scope': settings.FACEBOOK_SCOPE,
-        'redirect_uri': request.build_absolute_uri(reverse(facebook_login)),
+        'redirect_uri': request.build_absolute_uri(reverse('facebook-login')),
     }
     return redirect('https://www.facebook.com/dialog/oauth?' + urllib.urlencode(args))
 
@@ -52,7 +52,7 @@ def facebook_login(request, template_name='facebook/login.html',
     """
 
     fb = facebook.create_facebook_proxy(request,
-            request.build_absolute_uri(reverse(facebook_login)))
+            request.build_absolute_uri(reverse('facebook-login')))
 
     if not fb.authorized():
         ctx = extra_context or {}
