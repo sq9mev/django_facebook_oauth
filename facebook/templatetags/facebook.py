@@ -1,6 +1,6 @@
 from django import template
 
-from registration.templatetags import button
+from templatetags import button
 
 register = template.Library()
 
