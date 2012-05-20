@@ -4,4 +4,4 @@ from registration.templatetags import button
 
 register = template.Library()
 
-register.tag('facebook_button', button('registration/facebook_button.html'))
+register.tag('facebook_button', button('facebook/facebook_button.html'))
