@@ -9,7 +9,7 @@ class CreateUserForm(UserCreationForm):
 
     class Meta:
         model = User
-        fields = ('username', 'email')
+        fields = ('username', 'first_name', 'last_name', 'email')
 
 class ConnectUserForm(forms.Form):
     """form used to connect existing auth.models.User with FacebookProfile"""
