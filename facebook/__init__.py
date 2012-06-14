@@ -1,4 +1,5 @@
 import fbgraph
+from facebook.models import FacebookProfile
 
 
 class Facebook(object):
@@ -6,7 +7,8 @@ class Facebook(object):
     Simple Facebook proxy
     """
 
-    def __init__(self, uid=None, access_token=None, url=None):
+    def __init__(self, uid=None, access_token=None, url=None,
+            local_profile_class = FacebookProfile):
         """
         Args:
             uid (str): Facebook user identifier
@@ -15,6 +17,7 @@ class Facebook(object):
         self.uid = uid
         self.graph = fbgraph.GraphAPI(access_token, url=url)
         self._profile = None
+        self.local_profile_class = local_profile_class
 
         if self.graph.access_token and not self.uid:
             self.uid = self.get_user_id()
@@ -41,6 +44,15 @@ class Facebook(object):
     @property
     def access_token(self):
         return self.graph.access_token
+
+    @property
+    def user_id(self):
+        return self.get_user_id()
+
+    def get_or_create_local_profile(self, user):
+        return self.local_profile_class.objects.get_or_create(user = user,
+                facebook_id = self.user_id, access_token = self.access_token)
+
 
 
 def create_facebook_proxy(request, redirect_uri=''):

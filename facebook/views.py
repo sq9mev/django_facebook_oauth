@@ -5,7 +5,7 @@ from django.core.urlresolvers import reverse
 from django.shortcuts import render_to_response
 from django.template import RequestContext
 from django.utils.translation import ugettext_lazy as _
-from forms import CreateUserForm
+from forms import CreateUserForm, ConnectUserForm
 import facebook
 from fbgraph import GraphAPIError
 import urllib
@@ -44,8 +44,10 @@ def catch_connection_error(func, template_name='facebook/failed.html'):
 
 @catch_connection_error
 def facebook_login(request, template_name='facebook/login.html',
+        connect_template_name='facebook/login.html',
         fail_template_name='facebook/failed.html',
         extra_context=None, form_class=CreateUserForm,
+        connect_form_class=ConnectUserForm,
         success_url=settings.LOGIN_REDIRECT_URL):
     """
     Facebook callback view
@@ -62,11 +64,20 @@ def facebook_login(request, template_name='facebook/login.html',
         return render_to_response(fail_template_name, RequestContext(request, ctx))
 
 
+    if request.user.is_authenticated():
+        form_class = connect_form_class
+        user = request.user
+    else:
+        user = None
+
     if request.method == 'POST':
         fbprofile = fb.get_profile()
+
         form = form_class(data=request.POST, initial=fbprofile)
         if form.is_valid():
-            form.save()
+            maybe_new_user = form.save()
+            user = user or maybe_new_user #;)
+            fb.get_or_create_local_profile(user)
             user = authenticate(facebook_uid=fb.uid)
             if user:
                 signals.facebook_connect.send(sender=facebook_login,
@@ -79,7 +90,6 @@ def facebook_login(request, template_name='facebook/login.html',
         # using facebook User ID
         
         user = authenticate(facebook_uid=fb.uid)
-
         if user:
             # user authenticated
             signals.facebook_login.send(sender=facebook_login,
