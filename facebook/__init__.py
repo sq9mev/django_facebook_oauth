@@ -1,4 +1,5 @@
 import fbgraph
+from django.contrib.sites.models import Site
 from facebook.models import FacebookProfile
 
 
@@ -50,8 +51,10 @@ class Facebook(object):
         return self.get_user_id()
 
     def get_or_create_local_profile(self, user):
-        return self.local_profile_class.objects.get_or_create(user = user,
-                facebook_id = self.user_id, access_token = self.access_token)
+        return self.local_profile_class.on_site.get_or_create(user = user,
+                facebook_id = self.user_id, access_token = self.access_token,
+                site = Site.objects.get_current()
+                )
 
 
 
