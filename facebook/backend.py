@@ -10,7 +10,7 @@ class FacebookBackend:
         if not facebook_uid:
             return None
         try:
-            return profile_class.objects.get(facebook_id=facebook_uid, site = Site.objects.get_current()).user
+            return profile_class.objects.get(facebook_id=facebook_uid).user
         except profile_class.DoesNotExist:
             return None
 
