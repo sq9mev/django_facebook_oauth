@@ -47,8 +47,7 @@ def facebook_login(request, template_name='facebook/login.html',
         connect_template_name='facebook/login.html',
         fail_template_name='facebook/failed.html',
         extra_context=None, form_class=CreateUserForm,
-        connect_form_class=ConnectUserForm,
-        success_url=settings.LOGIN_REDIRECT_URL):
+        connect_form_class=ConnectUserForm,):
     """
     Facebook callback view
     """
@@ -83,6 +82,8 @@ def facebook_login(request, template_name='facebook/login.html',
                 signals.facebook_connect.send(sender=facebook_login,
                         instance=user, fbprofile=fbprofile, graph=fb.graph)
                 login(request, user)
+
+            success_url = '/profile/%d/' % user.userprofile.pk
             return redirect(success_url)
     else:
 
