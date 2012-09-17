@@ -83,7 +83,7 @@ def facebook_login(request, template_name='facebook/login.html',
                         instance=user, fbprofile=fbprofile, graph=fb.graph)
                 login(request, user)
 
-            success_url = '/profile/%d/' % user.userprofile.pk
+            success_url = '/profile/%d/' % user.pk
             return redirect(success_url)
     else:
 
