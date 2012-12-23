@@ -280,12 +280,26 @@ def get_user_from_cookie(cookies, app_id, app_secret):
     response = parse_signed_request(cookie, app_secret)
     if not response:
         return None
+    user_id=response['user_id']
 
-    access_token = get_access_token(response["code"], app_id, app_secret)
+    #access_token = get_access_token(response["code"], app_id, app_secret)
+    args = dict(
+        code=response['code'],
+        client_id=app_id,
+        client_secret=app_secret,
+        redirect_uri='',
+    )
+    response = urllib.urlopen('https://graph.facebook.com/oauth/access_token' + "?" +
+            urllib.urlencode(args)).read()
+    if not response:
+        return None
+    
+    data=urlparse.parse_qs(response)
+    access_token=data.get('access_token')
     if not access_token:
         return None
 
     return dict(
-        uid = response["user_id"],
-        access_token = access_token,
+        uid = user_id,
+        access_token = access_token[-1],
     )
