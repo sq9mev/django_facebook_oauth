@@ -108,7 +108,6 @@ def facebook_login(request, template_name='facebook/login.html',
 
         sufix=0
         try_username=username
-        import ipdb; ipdb.set_trace()
         while True:
             try:
                 user=User.objects.get(username=try_username)
