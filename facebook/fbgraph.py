@@ -38,6 +38,7 @@ import hashlib
 import time
 import urllib
 import urlparse
+from django.conf import settings
 
 # Find a JSON parser
 try:
@@ -181,6 +182,23 @@ class GraphAPI(object):
                                 response["error"]["message"])
         return response
 
+    def fetch_app_access_token(self):
+        args={
+                'client_id': settings.FACEBOOK_APP_ID,
+                'client_secret': settings.FACEBOOK_APP_SECRET,
+                'grant_type': 'client_credentials',
+                }
+        response = urllib.urlopen(self.url + 'oauth/access_token' + '?' +
+                urllib.urlencode(args)).read()
+        data=urlparse.parse_qs(response)
+        try:
+            self.access_token = data['access_token'][-1]
+            return self.access_token
+        except (KeyError, IndexError) as e:
+            logging.error('Problem fetching _APP_  access_oken : %s, response %s' %\
+                    (e, response))
+            return None
+
     def fetch_access_token(self, code, app_id, app_secret, redirect_uri=''):
         """
         Obtain access_token based on Facebook response code
@@ -292,11 +310,13 @@ def get_user_from_cookie(cookies, app_id, app_secret):
     response = urllib.urlopen('https://graph.facebook.com/oauth/access_token' + "?" +
             urllib.urlencode(args)).read()
     if not response:
+        print "NO RESPONSE"
         return None
     
     data=urlparse.parse_qs(response)
     access_token=data.get('access_token')
     if not access_token:
+        print "NO ACCESTOKEN"
         return None
 
     return dict(
