@@ -1,6 +1,7 @@
 from django.db import models
 from django.contrib.sites.models import Site
 from django.contrib.sites.managers import CurrentSiteManager
+from utils import fb_post_as_app
 
 
 class FacebookProfile(models.Model):
@@ -12,4 +13,9 @@ class FacebookProfile(models.Model):
     objects = models.Manager()
     on_site = CurrentSiteManager()
 
+    def __unicode__(self):
+        return 'FacebookProfile for %s' % self.user.username
+
+    def post_as_app(self, message, attachments=None):
+        fb_post_as_app(self.facebook_id, message, attachments)
 
