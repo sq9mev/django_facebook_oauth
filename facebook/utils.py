@@ -12,6 +12,7 @@ def fb_post_pages(message, attachment=None):
         if not FACEBOOK_OBJECTS_IDS:
             logging.debug('Not posting any FB pages - not configured')
             return
+        attachment=attachment or {}
         for (fbobj_id, access_token) in FACEBOOK_OBJECTS_IDS:
             graph=GraphAPI(access_token=access_token)
             try:
