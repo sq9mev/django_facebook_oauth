@@ -53,6 +53,8 @@ except ImportError:
         from django.utils import simplejson
         _parse_json = lambda s: simplejson.loads(s)
 
+def encode_dict(data):
+    return dict((k, v.encode('utf-8')) for (k, v) in data.items())
 
 class GraphAPI(object):
     """A client for the Facebook Graph API.
@@ -170,9 +172,10 @@ class GraphAPI(object):
                 post_args["access_token"] = self.access_token
             else:
                 args["access_token"] = self.access_token
-        post_data = None if post_args is None else urllib.urlencode(post_args)
+        post_data = None if post_args is None else \
+                urllib.urlencode(encode_dict(post_args))
         file = urllib.urlopen(self.url + path + "?" +
-                              urllib.urlencode(args), post_data)
+                              urllib.urlencode(encode_dict(args)), post_data)
         try:
             response = _parse_json(file.read())
         finally:
