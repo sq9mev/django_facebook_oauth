@@ -38,7 +38,11 @@ import hashlib
 import time
 import urllib
 import urlparse
+import logging
+from datetime import timedelta
+
 from django.conf import settings
+
 
 # Find a JSON parser
 try:
@@ -52,6 +56,13 @@ except ImportError:
         # For Google AppEngine
         from django.utils import simplejson
         _parse_json = lambda s: simplejson.loads(s)
+
+# Find now
+try:
+    from django.utils.timezone import now
+except ImportError:
+    from datetime import datetime
+    now=datetime.now
 
 def encode_dict(data):
     return dict((k, v.encode('utf-8')) for (k, v) in data.items())
@@ -86,6 +97,7 @@ class GraphAPI(object):
     """
     def __init__(self, access_token=None, url=None):
         self.access_token = access_token
+        self.expires = None
         self.url = url or 'https://graph.facebook.com/'
 
     def get_object(self, id, **args):
@@ -182,7 +194,7 @@ class GraphAPI(object):
             file.close()
         if response.get("error"):
             raise GraphAPIError(response["error"]["type"],
-                                response["error"]["message"])
+                response["error"]["message"], response["error"]["code"])
         return response
 
     def fetch_app_access_token(self):
@@ -220,15 +232,44 @@ class GraphAPI(object):
 
         try:
             self.access_token = data['access_token'][-1]
+            self.expires=data['expires'][-1]
             return self.access_token
         except (KeyError, IndexError):
             return None
 
+    def extend_access_token(self, access_token, app_id, app_secret):
+        args={
+            'client_id':app_id,
+            'client_secret': app_secret,
+            'grant_type':'fb_exchange_token',
+            'fb_exchange_token': access_token,
+        }
+        response = urllib.urlopen(self.url + '/oauth/access_token' + "?" +
+                          urllib.urlencode(args)).read()
+        try:
+            response=_parse_json(response)
+        except ValueError, e:
+            pass
+        else:
+            if response.get('error'):
+                raise GraphAPIError(response["error"]["type"],
+                    response["error"]["message"], response["error"]["code"])
+        data = urlparse.parse_qs(response)
+        try:
+            expires=now()+timedelta(seconds=int(data['expires'][-1]))
+            access_token=data['access_token'][-1]
+        except KeyError:
+            return None
+        return {
+            'expires': expires,
+            'access_token': access_token
+            }
 
 class GraphAPIError(Exception):
-    def __init__(self, type, message):
+    def __init__(self, type, message, code):
         Exception.__init__(self, message)
         self.type = type
+        self.code=code
 
 
 ##### NEXT TWO FUNCTIONS PULLED FROM https://github.com/jgorset/facepy/blob/master/facepy/signed_request.py
@@ -313,16 +354,16 @@ def get_user_from_cookie(cookies, app_id, app_secret):
     response = urllib.urlopen('https://graph.facebook.com/oauth/access_token' + "?" +
             urllib.urlencode(args)).read()
     if not response:
-        print "NO RESPONSE"
         return None
     
     data=urlparse.parse_qs(response)
     access_token=data.get('access_token')
+    expires=data.get('expires')
     if not access_token:
-        print "NO ACCESTOKEN"
         return None
 
     return dict(
         uid = user_id,
         access_token = access_token[-1],
+        expires = expires[-1]
     )

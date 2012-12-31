@@ -1,6 +1,7 @@
 import fbgraph
 from django.contrib.sites.models import Site
 from facebook.models import FacebookProfile
+from datetime import timedelta
 
 
 class Facebook(object):
@@ -47,15 +48,28 @@ class Facebook(object):
         return self.graph.access_token
 
     @property
+    def expires(self):
+        return self.graph.expires
+
+    @property
     def user_id(self):
         return self.get_user_id()
 
     def get_or_create_local_profile(self, user):
-        return self.local_profile_class.on_site.get_or_create(user = user,
-                facebook_id = self.user_id, access_token = self.access_token,
-                site = Site.objects.get_current()
-                )
-
+        profile_dict={
+            'user': user,
+            'facebook_id': self.user_id,
+            'access_token': self.access_token,
+            'site': Site.objects.get_current(),
+        }
+        try:
+            return self.local_profile_class.on_site.get(**profile_dict)
+        except self.local_profile_class.DoesNotExist:
+            new_profile=self.local_profile_class(**profile_dict)
+            new_profile.expires=self.graph.expires
+            new_profile.extend_access_token()
+            new_profile.save()
+            return new_profile
 
 
 def create_facebook_proxy(request, redirect_uri=''):
@@ -94,9 +108,10 @@ def create_facebook_proxy(request, redirect_uri=''):
         settings.FACEBOOK_APP_ID, settings.FACEBOOK_APP_SECRET)
 
     if fb_user:
-        return Facebook(fb_user['uid'], fb_user['access_token'],
+        fb=Facebook(fb_user['uid'], fb_user['access_token'],
                 url=facebook_url)
-
+        fb.graph.expires=fbgraph.now() + timedelta(seconds=int(fb_user['expires']))
+        return fb
     return Facebook(url=facebook_url)
 
 

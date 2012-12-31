@@ -20,7 +20,6 @@ def fb_post_pages(message, attachment=None):
             except GraphAPIError, e:
                 logging.error('Problem posting FB: %s' % e)
 
-
 def fb_post_as_app(profile_id, message, attachment=None):
     attachment=attachment or {}
     graph=GraphAPI()
@@ -30,3 +29,9 @@ def fb_post_as_app(profile_id, message, attachment=None):
     except GraphAPIError, e:
         logging.error('Problem posting FB: %s' % e)
 
+def fb_extend_access_token(access_token):
+    graph=GraphAPI()
+    new_token=graph.extend_access_token(access_token, 
+        settings.FACEBOOK_APP_ID, settings.FACEBOOK_APP_SECRET)
+    return new_token
+    
