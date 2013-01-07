@@ -1,33 +1,23 @@
 from django.conf import settings
+from django.utils.importlib import import_module
 from fbgraph import GraphAPI, GraphAPIError
-import logging
 
 
-def fb_post_pages(message, attachment=None):
-        '''
-        https://developers.facebook.com/docs/howtos/login/login-as-page/
-        '''
 
-        FACEBOOK_OBJECTS_IDS=getattr(settings, 'FACEBOOK_OBJECTS_IDS')
-        if not FACEBOOK_OBJECTS_IDS:
-            logging.debug('Not posting any FB pages - not configured')
-            return
-        attachment=attachment or {}
-        for (fbobj_id, access_token) in FACEBOOK_OBJECTS_IDS:
-            graph=GraphAPI(access_token=access_token)
-            try:
-                graph.put_wall_post(message, profile_id=str(fbobj_id), attachment=attachment)
-            except GraphAPIError, e:
-                logging.error('Problem posting FB: %s' % e)
-
-def fb_post_as_app(profile_id, message, attachment=None):
-    attachment=attachment or {}
-    graph=GraphAPI()
-    graph.fetch_app_access_token()
+def _get_backend(backend=None):
+    path=backend or getattr(settings, 'FB_BACKEND', 'facebook.fbbackends.FBConsoleBackend')
     try:
-        graph.put_wall_post(message, profile_id=str(profile_id), attachment=attachment)
-    except GraphAPIError, e:
-        logging.error('Problem posting FB: %s' % e)
+        mod_name, klass_name = path.rsplit('.', 1)
+        mod = import_module(mod_name)
+    except ImportError, e:
+        raise ImproperlyConfigured(('Error importing FB backend module %s: "%s"'
+                                    % (mod_name, e)))
+    try:
+        klass = getattr(mod, klass_name)
+    except AttributeError:
+        raise ImproperlyConfigured(('Module "%s" does not define a '
+                                    '"%s" class' % (mod_name, klass_name)))
+    return klass()
 
 def fb_extend_access_token(access_token):
     graph=GraphAPI()
@@ -35,3 +25,12 @@ def fb_extend_access_token(access_token):
         settings.FACEBOOK_APP_ID, settings.FACEBOOK_APP_SECRET)
     return new_token
     
+
+def fb_post_as_app(profile_id, message, attachment=None, backend=None):
+    backend=_get_backend(backend)
+    backend.post_as_app(profile_id, message, attachment)
+
+def fb_post_pages(message, attachment=None, backend=None):
+    backend=_get_backend(backend)
+    backend.post_pages(message, attachment)
+
