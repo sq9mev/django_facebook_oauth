@@ -1,7 +1,6 @@
 from django.conf import settings
 from fbgraph import GraphAPI, GraphAPIError
-from celery.task import task
-
+from tasks import *
 import logging
 
 class FBGraphBackend(object):
@@ -34,19 +33,11 @@ class FBGraphBackend(object):
 
 class AsyncFBGraphBackend(FBGraphBackend):
 
-    @task(name='fb_post_pages')
-    def _post_pages(self, message, attachment):
-        return super(AsyncFBGraphBackend, self).post_pages(message, attachment)
-
-    @task(name='fb_post_as_app')
-    def _post_as_app(self, profile_id, message, attachment=None):
-        return super(AsyncFBGraphBackend, self).post_as_app(profile_id, message, attachment)
-
     def post_pages(self, message, attachment=None):
-        self._post_pages.delay(message, attachment)
+        post_pages.delay(message, attachment)
 
     def post_as_app(self, profile_id, message, attachment=None):
-        self._post_as_app.delay(profile_id, message, attachment)
+        post_as_app.delay(profile_id, message, attachment)
 
 
 class FBConsoleBackend(object):
