@@ -1,11 +1,11 @@
 from django.conf import settings
 from django.utils.importlib import import_module
 from fbgraph import GraphAPI, GraphAPIError
-
+from django.core.exceptions import ImproperlyConfigured
 
 
 def _get_backend(backend=None):
-    path=backend or getattr(settings, 'FB_BACKEND', 'facebook.fbbackends.FBConsoleBackend')
+    path=backend or getattr(settings, 'FB_BACKEND', 'facebook.fbbackends.FBLogBackend')
     try:
         mod_name, klass_name = path.rsplit('.', 1)
         mod = import_module(mod_name)
