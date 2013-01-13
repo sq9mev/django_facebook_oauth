@@ -66,9 +66,10 @@ class Facebook(object):
             return self.local_profile_class.on_site.get(**profile_dict)
         except self.local_profile_class.DoesNotExist:
             new_profile=self.local_profile_class(**profile_dict)
-            new_profile.expires=self.graph.expires
-            if new_profile.extend_access_token():
-                new_profile.save()
+            if self.graph.expires:
+                new_profile.expires=self.graph.expires
+            new_profile.extend_access_token()
+            new_profile.save()
             return new_profile
 
 
