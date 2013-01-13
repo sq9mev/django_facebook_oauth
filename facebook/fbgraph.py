@@ -44,6 +44,8 @@ from datetime import timedelta
 from django.conf import settings
 
 
+#setup logging
+logger=logging.getLogger('facebook')
 # Find a JSON parser
 try:
     import json
@@ -210,7 +212,7 @@ class GraphAPI(object):
             self.access_token = data['access_token'][-1]
             return self.access_token
         except (KeyError, IndexError) as e:
-            logging.error('Problem fetching _APP_  access_oken : %s, response %s' %\
+            logger.error('Problem fetching _APP_  access_oken : %s, response %s' %\
                     (e, response))
             return None
 
@@ -249,7 +251,7 @@ class GraphAPI(object):
         try:
             response=_parse_json(response)
         except ValueError, e:
-            pass
+            logger.error('Problem parsing EAT response: %s' % e)
         else:
             if response.get('error'):
                 raise GraphAPIError(response["error"]["type"],
@@ -258,7 +260,8 @@ class GraphAPI(object):
         try:
             expires=now()+timedelta(seconds=int(data['expires'][-1]))
             access_token=data['access_token'][-1]
-        except KeyError:
+        except KeyError, e:
+            logger.error('Problem getting new access token, data was: %s' data)
             return None
         return {
             'expires': expires,

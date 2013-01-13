@@ -20,9 +20,11 @@ class FacebookProfile(models.Model):
 
     def extend_access_token(self):
         new_token=fb_extend_access_token(self.access_token)
-        self.access_token=new_token['access_token']
-        self.expires=new_token['expires']
-        self.extended=True
+        if 'access_token' in new_token:
+            self.access_token=new_token['access_token']
+            self.expires=new_token['expires']
+            self.extended=True
+            return new_token
 
     def post_as_app(self, message, attachments=None):
         fb_post_as_app(self.facebook_id, message, attachments)
