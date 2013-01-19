@@ -101,7 +101,6 @@ def facebook_login(request, template_name='facebook/login.html',
 
         fbprofile = fb.get_profile()
         initials=dict((k, v) for (k, v) in fbprofile.iteritems() if k in ('first_name', 'last_name', 'email'))
-        import ipdb; ipdb.set_trace();
         potential_username=fbprofile.get('username')
         
         if not potential_username:
