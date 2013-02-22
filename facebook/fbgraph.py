@@ -44,6 +44,8 @@ from datetime import timedelta
 from django.conf import settings
 
 
+#setup logging
+logger=logging.getLogger('facebook')
 # Find a JSON parser
 try:
     import json
@@ -210,7 +212,7 @@ class GraphAPI(object):
             self.access_token = data['access_token'][-1]
             return self.access_token
         except (KeyError, IndexError) as e:
-            logging.error('Problem fetching _APP_  access_oken : %s, response %s' %\
+            logger.error('Problem fetching _APP_  access_oken : %s, response %s' %\
                     (e, response))
             return None
 
@@ -246,6 +248,8 @@ class GraphAPI(object):
         }
         response = urllib.urlopen(self.url + '/oauth/access_token' + "?" +
                           urllib.urlencode(args)).read()
+        logger.debug('Got response for fb_exchange_token with args: %s, response: %s' %
+                (args, response))
         try:
             response=_parse_json(response)
         except ValueError, e:
@@ -256,10 +260,16 @@ class GraphAPI(object):
                     response["error"]["message"], response["error"]["code"])
         data = urlparse.parse_qs(response)
         try:
-            expires=now()+timedelta(seconds=int(data['expires'][-1]))
             access_token=data['access_token'][-1]
-        except KeyError:
+        except KeyError, e:
+            logger.error('Problem getting new access token, data was: %s' % data)
             return None
+        else:
+            try:
+                expires=now()+timedelta(seconds=int(data['expires'][-1])) 
+            except KeyError, e:
+                logger.error('Got Extended token without expires, data was: %s' % data)
+                expires=None
         return {
             'expires': expires,
             'access_token': access_token
@@ -357,6 +367,7 @@ def get_user_from_cookie(cookies, app_id, app_secret):
         return None
     
     data=urlparse.parse_qs(response)
+    logger.debug('Got data from cookie: %s' % data)
     access_token=data.get('access_token')
     expires=data.get('expires')
     if not access_token:

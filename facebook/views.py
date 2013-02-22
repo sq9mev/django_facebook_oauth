@@ -101,10 +101,15 @@ def facebook_login(request, template_name='facebook/login.html',
 
         fbprofile = fb.get_profile()
         initials=dict((k, v) for (k, v) in fbprofile.iteritems() if k in ('first_name', 'last_name', 'email'))
-        username=fbprofile.get('username').replace('.', '-')
-
-        if not username:
-            username=unidecode(u'-'.join(fbprofile.get('name').split())).lower()
+        potential_username=fbprofile.get('username')
+        
+        if not potential_username:
+            try:
+                potential_username=u'-'.join(fbprofile.get('name').split())
+            except AttributeError, e:
+                logger.error('Error guessing username from fbprofile: %s' % fbprofile)
+                potential_username=u'fb_%s' % fbprofile['id']
+        username=unidecode(potential_username.lower().replace('.', '-'))
 
         sufix=0
         try_username=username
@@ -116,7 +121,7 @@ def facebook_login(request, template_name='facebook/login.html',
                 break
             else:
                 sufix+=1
-                try_username=username + str(sufix)
+                try_username=username + '-' + str(sufix)
 
         initials.update({'username': username})
         form = form_class(initial=initials)

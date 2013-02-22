@@ -46,7 +46,6 @@ class NoPasswordUserCreationForm(forms.Form):
         user=User(username=cd['username'], email=cd['email'], password=password,
                 first_name=cd['first_name'], last_name=cd['last_name'])
         user.save()
-
         return user
 
 
