@@ -1,5 +1,11 @@
 from celery.task import task
 
+@task(name='fb_put_like')
+def put_like(access_token, what_to_like):
+    from fbbackends import FBGraphBackend
+    backend=FBGraphBackend()
+    backend.put_like(access_token, what_to_like)
+
 @task(name='fb_post_pages')
 def post_pages(message, attachment=None):
     from fbbackends import FBGraphBackend

@@ -1,7 +1,7 @@
 from django.db import models
 from django.contrib.sites.models import Site
 from django.contrib.sites.managers import CurrentSiteManager
-from utils import fb_post_as_app, fb_extend_access_token
+from utils import fb_post_as_app, fb_extend_access_token, fb_put_like
 
 
 class FacebookProfile(models.Model):
@@ -26,4 +26,8 @@ class FacebookProfile(models.Model):
 
     def post_as_app(self, message, attachments=None):
         fb_post_as_app(self.facebook_id, message, attachments)
+
+    def put_like(self, what_to_like):
+        fb_put_like(self.access_token, what_to_like)
+
 

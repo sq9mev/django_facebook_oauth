@@ -34,3 +34,6 @@ def fb_post_pages(message, attachment=None, backend=None):
     backend=_get_backend(backend)
     backend.post_pages(message, attachment)
 
+def fb_put_like(access_token, what_to_like, backend=None):
+    backend=_get_backend(backend)
+    backend.put_like(access_token, what_to_like)
