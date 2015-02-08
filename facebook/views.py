@@ -14,6 +14,22 @@ import signals
 from unidecode import unidecode
 
 
+def direct_to_template(request, template, extra_context=None, mimetype=None, **kwargs):
+    """
+    Render a given template with any extra URL parameters in the context as
+    ``{{ params }}``.
+    """
+    if extra_context is None: extra_context = {}
+    dictionary = {'params': kwargs}
+    for key, value in extra_context.items():
+        if callable(value):
+            dictionary[key] = value()
+        else:
+            dictionary[key] = value
+    c = RequestContext(request, dictionary)
+    t = loader.get_template(template)
+    return HttpResponse(t.render(c), content_type=mimetype)
+
 def redirect_to_facebook_auth(request):
     """ First step of process, redirects user to facebook, which redirects to authentication_callback. """
 

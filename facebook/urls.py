@@ -1,5 +1,12 @@
-from django.conf.urls.defaults import patterns, url
-from django.views.generic.simple import direct_to_template
+try:
+    from django.conf.urls.defaults import patterns, url
+except ImportError:
+    from django.conf.urls import patterns, url
+
+try:
+    from django.views.generic.simple import direct_to_template
+except ImportError:
+    from views import direct_to_template
 
 urlpatterns = patterns('facebook.views',
     url(r'^auth/$', 'redirect_to_facebook_auth', name='facebook-auth'),
